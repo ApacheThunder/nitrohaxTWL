@@ -16,12 +16,41 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stddef.h>
-#include <nds/card.h>
-#include "nds_card.h"
+#ifndef READ_CARD_H
+#define READ_CARD_H
 
-void getHeader (u32* ndsHeader) {
-	cardParamCommand (CARD_CMD_DUMMY, 0, CARD_ACTIVATE | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), NULL, 0);
-	cardParamCommand(CARD_CMD_HEADER_READ, 0, CARD_ACTIVATE | CARD_nRESET | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), ndsHeader, 512);
+#include <nds/ndstypes.h>
+#include <nds/memory.h>
+#include <stdlib.h>
+
+#include "ndsheaderbanner.h"
+
+#define CARD_NDS_HEADER_SIZE (0x200)
+#define CARD_SECURE_AREA_OFFSET (0x4000)
+#define CARD_SECURE_AREA_SIZE (0x4000)
+#define CARD_DATA_OFFSET (0x8000)
+#define CARD_DATA_BLOCK_SIZE (0x200)
+#define MODC_AREA_SIZE          0x4000
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern u32 cardNandRomEnd;
+extern u32 cardNandRwStart;
+
+int cardInit (sNDSHeaderExt* ndsHeader);
+int CardInit (void);
+
+void cardRead (u32 src, void* dest, bool nandSave);
+
+u32 cardGetId (void);
+
+void cardWriteNand (void* src, u32 dest);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif // READ_CARD_H
 

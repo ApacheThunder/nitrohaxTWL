@@ -29,18 +29,47 @@
 #include "cheat_engine.h"
 #include "crc.h"
 #include "version.h"
+#include "read_card.h"
 
 const char TITLE_STRING[] = "Nitro Hax " VERSION_STRING "\nWritten by Chishm";
-const char* defaultFiles[] = {"cheats.xml", "/DS/NitroHax/cheats.xml", "/NitroHax/cheats.xml", "/data/NitroHax/cheats.xml", "/cheats.xml"};
 
+const char* defaultFiles[] = {
+	"cheats.xml", 
+	"/DS/NitroHax/cheats.xml",
+	"/NitroHax/cheats.xml",
+	"/NDS/NitroHax/cheats.xml",
+	"/data/NitroHax/cheats.xml",
+	"/_nds/NitroHax/cheats.xml",
+	"/cheats.xml"};
+
+static bool ROMisDSiExclusive(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x03); }
+static bool ROMisDSiEnhanced(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x02); }
 
 static inline void ensure (bool condition, const char* errorMsg) {
-	if (false == condition) {
+	if (!condition) {
 		ui.showMessage (errorMsg);
-		while(1) swiWaitForVBlank();
+		while(1)swiWaitForVBlank();
 	}
-
 	return;
+}
+
+void DoWait(int waitTime = 30){
+	for (int i = 0; i < waitTime; i++) swiWaitForVBlank();
+};
+
+void ResetSlot1() {
+	if (REG_SCFG_MC == 0x11) return;
+	disableSlot1();
+	DoWait();
+	enableSlot1();
+}
+
+void DoCartCheck() {
+	if (REG_SCFG_MC == 0x11) {
+		do { swiWaitForVBlank(); } while (REG_SCFG_MC != 0x10);
+		enableSlot1();
+		DoWait(60);
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -57,7 +86,8 @@ int main(int argc, const char* argv[])
 	std::string filename;
 	int c;
 	FILE* cheatFile;
-
+	bool isTWLCart = false;
+	
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 
 #ifdef DEMO
@@ -68,15 +98,16 @@ int main(int argc, const char* argv[])
 	ensure (fatInitDefault(), "FAT init failed");
 
 	// Read cheat file
-	for (u32 i = 0; i < sizeof(defaultFiles)/sizeof(const char*); i++) {
-		cheatFile = fopen (defaultFiles[i], "rb");
-		if (NULL != cheatFile) break;
+	for (const char* FileName : defaultFiles) {
+		cheatFile = fopen(FileName, "rb");
+		if (cheatFile)break;
 	}
-	if (NULL == cheatFile) {
+	
+	if (!cheatFile) {
 		filename = ui.fileBrowser (".xml");
 		ensure (filename.size() > 0, "No file specified");
 		cheatFile = fopen (filename.c_str(), "rb");
-		ensure (cheatFile != NULL, "Couldn't load cheats");
+		ensure (cheatFile, "Couldn't load cheats");
 	}
 
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
@@ -93,24 +124,29 @@ int main(int argc, const char* argv[])
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 
 	sysSetCardOwner (BUS_OWNER_ARM9);
-
-	ui.showMessage ("Loaded codes\nYou can remove your flash card\nRemove DS Card");
-	do {
-		swiWaitForVBlank();
-		getHeader (ndsHeader);
-	} while (ndsHeader[0] != 0xffffffff);
-
-	ui.showMessage ("Insert Game");
-	do {
-		swiWaitForVBlank();
-		getHeader (ndsHeader);
-	} while (ndsHeader[0] == 0xffffffff);
-
-	// Delay half a second for the DS card to stabilise
-	for (int i = 0; i < 30; i++) {
-		swiWaitForVBlank();
+	// Check if on DSi with unlocked SCFG, if not, then assume standard NTR precedure.
+	if ((REG_SCFG_EXT & BIT(31))) {
+		ui.showMessage ("Loaded codes\nChecking if a cart is inserted");
+		if (REG_SCFG_MC != 0x18)ui.showMessage ("Insert Game");
+		while (REG_SCFG_MC != 0x18)DoCartCheck();
+		CardInit();
+	} else {
+		ui.showMessage ("Loaded codes\nYou can remove your flash card\nRemove DS Card");
+		do {
+			swiWaitForVBlank();
+			getHeader (ndsHeader);
+		} while (ndsHeader[0] != 0xffffffff);
+	
+		ui.showMessage ("Insert Game");
+		do {
+			swiWaitForVBlank();
+			getHeader (ndsHeader);
+		} while (ndsHeader[0] == 0xffffffff);
 	}
 
+	// Delay half a second for the DS card to stabilise
+	DoWait();
+	
 	getHeader (ndsHeader);
 
 	ui.showMessage ("Finding game");
@@ -119,12 +155,13 @@ int main(int argc, const char* argv[])
 	headerCRC = crc32((const char*)ndsHeader, sizeof(ndsHeader));
 	CheatFolder *gameCodes = codelist->getGame (gameid, headerCRC);
 
-	if (!gameCodes) {
-		gameCodes = codelist;
-	}
+	if (!gameCodes)gameCodes = codelist;
 
+	ensure(!ROMisDSiExclusive((const tNDSHeader*)ndsHeader), "TWL exclusive games are not supported!");
+	isTWLCart = ROMisDSiEnhanced((const tNDSHeader*)ndsHeader);
+	
+		
 	ui.cheatMenu (gameCodes, gameCodes);
-
 
 	cheatDest = (u32*) malloc(CHEAT_MAX_DATA_SIZE);
 	ensure (cheatDest != NULL, "Bad malloc\n");
@@ -138,11 +175,10 @@ int main(int argc, const char* argv[])
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 	ui.showMessage ("Running game");
 
-	runCheatEngine (cheatDest, curCheat * sizeof(u32));
+	runCheatEngine (cheatDest, curCheat * sizeof(u32), isTWLCart);
 
-	while(1) {
-
-	}
+	while(1)swiWaitForVBlank();
 
 	return 0;
 }
+

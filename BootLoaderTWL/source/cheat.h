@@ -16,12 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stddef.h>
-#include <nds/card.h>
-#include "nds_card.h"
+#include <nds/memory.h>
+#include <nds/ndstypes.h>
 
-void getHeader (u32* ndsHeader) {
-	cardParamCommand (CARD_CMD_DUMMY, 0, CARD_ACTIVATE | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), NULL, 0);
-	cardParamCommand(CARD_CMD_HEADER_READ, 0, CARD_ACTIVATE | CARD_nRESET | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), ndsHeader, 512);
-}
+/*-------------------------------------------------------------------------
+arm7_hookGame
+Adds a hook in the game's ARM7 binary to our own code
+-------------------------------------------------------------------------*/
+int arm7_hookGame (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cheatEngineLocation);
 

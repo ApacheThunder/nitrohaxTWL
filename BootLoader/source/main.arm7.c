@@ -208,6 +208,23 @@ void arm7_main (void) {
 	// Get ARM7 to clear RAM
 	arm7_resetMemory();
 
+	if (REG_SNDEXTCNT != 0) {
+		if ((REG_SCFG_EXT & BIT(31))) {
+			*((vu32*)REG_MBK1)=0x8D898581;
+			*((vu32*)REG_MBK2)=0x8C888480;
+			*((vu32*)REG_MBK3)=0x9C989490;
+			*((vu32*)REG_MBK4)=0x8C888480;
+			*((vu32*)REG_MBK5)=0x9C989490;
+			REG_MBK6=0x09403900;
+			REG_MBK7=0x09803940;
+			REG_MBK8=0x09C03980;
+			REG_MBK9=0xFCFFFF0F;
+			REG_SCFG_ROM = 0x703;
+			REG_SCFG_CLK = 0x100;
+			REG_SCFG_EXT = 0x12A00000;
+		}
+	}
+	
 	ipcSendState(ARM7_LOADBIN);
 
 	// Load the NDS file
@@ -215,7 +232,7 @@ void arm7_main (void) {
 	if (errorCode) {
 		errorOutput(errorCode);
 	}
-
+	
 	ipcSendState(ARM7_HOOKBIN);
 
 	// Load the cheat engine and hook it into the ARM7 binary
@@ -223,7 +240,7 @@ void arm7_main (void) {
 	if (errorCode != ERR_NONE && errorCode != ERR_NOCHEAT) {
 		errorOutput(errorCode);
 	}
-
+	
 	ipcSendState(ARM7_BOOTBIN);
 
 	arm7_reset();

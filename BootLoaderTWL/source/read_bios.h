@@ -15,13 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <nds/ndstypes.h>
 
-#include <stddef.h>
-#include <nds/card.h>
-#include "nds_card.h"
-
-void getHeader (u32* ndsHeader) {
-	cardParamCommand (CARD_CMD_DUMMY, 0, CARD_ACTIVATE | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), NULL, 0);
-	cardParamCommand(CARD_CMD_HEADER_READ, 0, CARD_ACTIVATE | CARD_nRESET | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), ndsHeader, 512);
-}
-
+void readBios (u8* dest, u32 src, u32 size);

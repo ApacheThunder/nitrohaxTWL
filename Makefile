@@ -11,16 +11,16 @@ export TARGET		:=	NitroHax
 export TOPDIR		:=	$(CURDIR)
 
 export VERSION_MAJOR	:= 0
-export VERSION_MINOR	:= 94
+export VERSION_MINOR	:= 95
 export VERSTRING	:=	$(VERSION_MAJOR).$(VERSION_MINOR)
 
 
-.PHONY: checkarm7 checkarm9
+.PHONY: dsi checkarm7 checkarm9
 
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-all: $(TARGET).nds checkarm7 checkarm9
+all: $(TARGET).nds $(TARGET).dsi checkarm7 checkarm9
 
 #---------------------------------------------------------------------------------
 checkarm7:
@@ -34,13 +34,28 @@ $(TARGET).nds	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
 	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
 			-b $(CURDIR)/icon.bmp "Nitro Hax;DS Game Cheat Tool;Created by Chishm"
 
+			
+$(TARGET).dsi	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
+	ndstool	-c $(TARGET).dsi -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
+			-b $(CURDIR)/icon.bmp "Nitro Hax for DSi;DS Game Cheat Tool;Created by Chishm" \
+			-g CHTE 01 "NITROHAXTWL" -z 80040000 -u 00030004 -a 00000038 -p 0000
+
 #---------------------------------------------------------------------------------
 # Create boot loader and link raw binary into ARM9 ELF
 #---------------------------------------------------------------------------------
 BootLoader/load.bin	:	BootLoader/source/*
 	$(MAKE) -C BootLoader
 
+BootLoaderTWL/loadtwl.bin	:	BootLoaderTWL/source/*
+	$(MAKE) -C BootLoaderTWL
+	
+	
 arm9/data/load.bin	:	BootLoader/load.bin
+	mkdir -p $(@D)
+	cp $< $@
+
+	
+arm9/data/loadtwl.bin	:	BootLoaderTWL/loadtwl.bin
 	mkdir -p $(@D)
 	cp $< $@
 
@@ -58,11 +73,11 @@ arm7/$(TARGET).elf:
 	$(MAKE) -C arm7
 	
 #---------------------------------------------------------------------------------
-arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/source/version.h
+arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/data/loadtwl.bin arm9/source/version.h
 	$(MAKE) -C arm9
 
 #---------------------------------------------------------------------------------
-dist-bin	: $(TARGET).nds README.md LICENSE
+dist-bin	: $(TARGET).nds $(TARGET).dsi README.md LICENSE
 	zip -X -9 $(TARGET)_v$(VERSTRING).zip $^
 
 dist-src	:
@@ -71,7 +86,8 @@ dist-src	:
 	Makefile icon.bmp LICENSE README.md \
 	arm7/Makefile arm7/source \
 	arm9/Makefile arm9/source arm9/graphics \
-	BootLoader/Makefile BootLoader/load.ld BootLoader/source
+	BootLoader/Makefile BootLoader/load.ld BootLoader/source \
+	BootLoaderTWL/Makefile BootLoaderTWL/loadtwl.ld BootLoaderTWL/source
 
 dist	:	dist-bin dist-src
 
@@ -80,5 +96,7 @@ clean:
 	$(MAKE) -C arm9 clean
 	$(MAKE) -C arm7 clean
 	$(MAKE) -C BootLoader clean
+	$(MAKE) -C BootLoaderTWL clean
 	rm -f arm9/data/load.bin
-	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).arm7 $(TARGET).arm9
+	rm -f arm9/data/loadtwl.bin
+	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).dsi $(TARGET).arm7 $(TARGET).arm9

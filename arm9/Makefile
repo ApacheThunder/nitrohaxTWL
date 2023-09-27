@@ -28,7 +28,7 @@ ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
 CFLAGS	:=	-g -Wall -O2\
 			-fomit-frame-pointer\
 			-ffast-math \
-			-Wall -Wextra -Werror \
+			-Wall -Wextra \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM9
@@ -36,7 +36,7 @@ CXXFLAGS	:=	$(CFLAGS)
 
 ASFLAGS	:=	-g $(ARCH) $(INCLUDE)
 
-LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-specs=dsi_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -126,6 +126,12 @@ bgtop.s			:	../$(IMAGES)/bgtop.bmp
 	grit	$< -gB4 -gzl -fts -o $@ -q
 	
 bgsub.s			:	../$(IMAGES)/bgsub.bmp
+	grit	$< -gB4 -gzl -fts -o $@ -q
+
+bgtopTWL.s			:	../$(IMAGES)/bgtopTWL.bmp
+	grit	$< -gB4 -gzl -fts -o $@ -q
+	
+bgsubTWL.s			:	../$(IMAGES)/bgsubTWL.bmp
 	grit	$< -gB4 -gzl -fts -o $@ -q
 
 cursor.s		:	../$(IMAGES)/cursor.bmp

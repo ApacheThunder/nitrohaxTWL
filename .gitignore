@@ -1,8 +1,13 @@
 BootLoader/build
 BootLoader/load.bin
+BootLoaderTWL/build
+BootLoaderTWL/load.bin
+title/
 arm7/build
 arm9/build/
 arm9/data/
 arm9/source/version.h
 *.nds
+*.dsi
+*.app
 *.elf

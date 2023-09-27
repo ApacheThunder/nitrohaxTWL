@@ -1,4 +1,4 @@
-Nitro Hax
+Nitro Hax (TWL Build by Apache Thunder)
 =========
 
 By Chishm
@@ -13,6 +13,10 @@ The newest release is available to
 Usage
 =====
 
+Note: For DSi users able to use Unlaunch to launch NitroHax from DSi SD, the step
+of replacing the cart with the game during 5 and 6 are not required. 
+Cheats will be stored on DSi SD instead of flashcart.
+
 1. Patch NitroHax.nds with a DLDI file if you need to.
 2. Copy the NitroHax.nds file to your media device.
 3. Place an Action Replay XML file on your media device.
@@ -24,9 +28,10 @@ Usage
       * "/data/NitroHax/cheats.xml"
       * "/cheats.xml"
    2. If no file is found, browse for and select a file to open.
-5. Remove your media device if you want to.
-6. Remove any card that is in Slot-1
+5. Remove your media device if you want to. (Not applicable on DSi)
+6. Remove any card that is in Slot-1 (Not applicable on DSi)
 7. Insert the DS game into Slot-1
+   (Not applicable on DSi. Program will wait for user to insert game if booted up with slot empty)
 8. Choose the cheats you want to enable.
    1. Some cheats are enabled by default and others may be always on. This is
    specified in the XML file.

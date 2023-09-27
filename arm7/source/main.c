@@ -22,13 +22,9 @@
 
 #include "cheat_engine_arm7.h"
 
+void VcountHandler() { inputGetAndSend(); }
 
-void VcountHandler() {
-	inputGetAndSend();
-}
-
-void VblankHandler(void) {
-}
+void VblankHandler(void) { }
 
 //---------------------------------------------------------------------------------
 int main(void) {
@@ -51,6 +47,11 @@ int main(void) {
 	irqSet(IRQ_VBLANK, VblankHandler);
 
 	irqEnable( IRQ_VBLANK | IRQ_VCOUNT);
+
+	if (REG_SNDEXTCNT != 0) {	
+		i2cWriteRegister(0x4A, 0x12, 0x00);	// Press power-button for auto-reset
+		i2cWriteRegister(0x4A, 0x70, 0x01);	// Bootflag = Warmboot/SkipHealthSafety
+	}
 
 	// Keep the ARM7 mostly idle
 	while (1) {

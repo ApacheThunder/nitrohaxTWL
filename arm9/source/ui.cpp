@@ -31,6 +31,8 @@
 #include "font.h"
 #include "bgtop.h"
 #include "bgsub.h"
+#include "bgtopTWL.h"
+#include "bgsubTWL.h"
 #include "scrollbar.h"
 #include "cursor.h"
 #include "textbox.h"
@@ -135,10 +137,17 @@ UserInterface::UserInterface (void)
 	REG_BG2CNT_SUB = BG_MAP_BASE(4) | BG_COLOR_16 | BG_TILE_BASE(6) | BG_PRIORITY(0);
 
 	// Set up background image
-	swiDecompressLZSSVram ((void*)bgtopTiles, (void*)CHAR_BASE_BLOCK(2), 0, &decompressBiosCallback);
-	swiDecompressLZSSVram ((void*)bgsubTiles, (void*)CHAR_BASE_BLOCK_SUB(2), 0, &decompressBiosCallback);
-	vramcpy (&BG_PALETTE[0], bgtopPal, bgtopPalLen);
-	vramcpy (&BG_PALETTE_SUB[0], bgsubPal, bgsubPalLen);
+	if ((REG_SCFG_EXT & BIT(31))) {
+		swiDecompressLZSSVram ((void*)bgtopTWLTiles, (void*)CHAR_BASE_BLOCK(2), 0, &decompressBiosCallback);
+		swiDecompressLZSSVram ((void*)bgsubTWLTiles, (void*)CHAR_BASE_BLOCK_SUB(2), 0, &decompressBiosCallback);
+		vramcpy (&BG_PALETTE[0], bgtopTWLPal, bgtopTWLPalLen);
+		vramcpy (&BG_PALETTE_SUB[0], bgsubTWLPal, bgsubTWLPalLen);
+	} else {
+		swiDecompressLZSSVram ((void*)bgtopTiles, (void*)CHAR_BASE_BLOCK(2), 0, &decompressBiosCallback);
+		swiDecompressLZSSVram ((void*)bgsubTiles, (void*)CHAR_BASE_BLOCK_SUB(2), 0, &decompressBiosCallback);
+		vramcpy (&BG_PALETTE[0], bgtopPal, bgtopPalLen);
+		vramcpy (&BG_PALETTE_SUB[0], bgsubPal, bgsubPalLen);
+	}
 	u16* bgMapTop = (u16*)SCREEN_BASE_BLOCK(0);
 	u16* bgMapSub = (u16*)SCREEN_BASE_BLOCK_SUB(0);
 	for (int i = 0; i < CONSOLE_SCREEN_WIDTH*CONSOLE_SCREEN_HEIGHT; i++) {
