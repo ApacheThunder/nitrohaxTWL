@@ -29,12 +29,13 @@ void tonccpy(void *dst, const void *src, uint size) {
         count /= 4;
 
         // Duff's Device, good friend!
+		// Added fall through attribute to silance the compiler about this. ;)
         switch(tmp) {
-            do {    *dst32++ = *src32++;
-			case 3:     *dst32++ = *src32++;
-			case 2:     *dst32++ = *src32++;
-			case 1:     *dst32++ = *src32++;
-			case 0:     ; } while(count--);
+            do {    	*dst32++ = *src32++; // fallthrough
+			case 3:     *dst32++ = *src32++; // fallthrough
+			case 2:     *dst32++ = *src32++; // fallthrough
+			case 1:     *dst32++ = *src32++; // fallthrough
+			case 0:		  ;} while(count--); // fallthrough
         }
 
         // Check for tail
@@ -105,13 +106,14 @@ void __toncset(void *dst, u32 fill, uint size) {
     count= size/4;
     uint tmp= count&3;
     count /= 4;
-
+	
+	// Added fall through attribute to silance the compiler about this. ;)
     switch(tmp) {
-        do {    *dst32++ = fill;
-			case 3:     *dst32++ = fill;
-			case 2:     *dst32++ = fill;
-			case 1:     *dst32++ = fill;
-			case 0:     ; } while(count--);
+        do {    *dst32++ = fill;		 // fallthrough
+			case 3:     *dst32++ = fill; // fallthrough
+			case 2:     *dst32++ = fill; // fallthrough
+			case 1:     *dst32++ = fill; // fallthrough
+			case 0:	  ;} while(count--); // fallthrough
     }
 
     // Tail

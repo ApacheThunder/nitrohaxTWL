@@ -29,4 +29,3 @@ u32* findMpuDataOffset(const module_params_t* moduleParams, u32 patchMpuRegion, 
 u32* findMpuInitCacheOffset(const u32* mpuStartOffset);
 
 #endif // FIND_H
-

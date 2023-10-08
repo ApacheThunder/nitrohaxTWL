@@ -20,7 +20,13 @@
 #include <nds/arm7/input.h>
 #include <nds/system.h>
 
-#include "cheat_engine_arm7.h"
+/*void runCheatEngineCheck (void) {
+	if(*((vu32*)0x027FFE24) == (u32)0x027FFE04) {
+		irqDisable (IRQ_ALL);
+		*((vu32*)0x027FFE34) = (u32)0x06020000;
+		swiSoftReset();
+	}
+}*/
 
 void VcountHandler() { inputGetAndSend(); }
 
@@ -55,9 +61,8 @@ int main(void) {
 
 	// Keep the ARM7 mostly idle
 	while (1) {
-		runCheatEngineCheck();
+		// runCheatEngineCheck();
 		swiWaitForVBlank();
 	}
 }
-
 

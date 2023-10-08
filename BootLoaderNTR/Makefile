@@ -12,7 +12,7 @@ endif
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-export TARGET		:= loadtwl
+export TARGET		:= loadntr
 BUILD		:=	build
 SOURCES		:=	source source/patches 
 INCLUDES	:=	build
@@ -26,13 +26,13 @@ ARCH	:=	-mthumb-interwork -march=armv4t -mtune=arm7tdmi
 CFLAGS	:=	-g -Wall -O2\
 			-fomit-frame-pointer\
 			-ffast-math \
-			-Wall -Wextra \
+			-Wall -Wextra -Werror \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM7 -std=gnu99
+CFLAGS	+=	$(INCLUDE) -DARM7
 
 ASFLAGS	:=	-g $(ARCH) $(INCLUDE)
-LDFLAGS	:=	-nostartfiles -T$(CURDIR)/../loadtwl.ld -g $(ARCH) -Wl,-Map,$(TARGET).map
+LDFLAGS	:=	-nostartfiles -T$(CURDIR)/../load.ld -g $(ARCH) -Wl,-Map,$(TARGET).map
 
 LIBS	:= -lnds7
 
@@ -89,7 +89,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) *.elf loadtwl.bin
+	@rm -fr $(BUILD) *.elf $(TARGET).bin
  
  
 #---------------------------------------------------------------------------------

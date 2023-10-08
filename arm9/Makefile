@@ -28,7 +28,7 @@ ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
 CFLAGS	:=	-g -Wall -O2\
 			-fomit-frame-pointer\
 			-ffast-math \
-			-Wall -Wextra \
+			-Wall -Wextra -Werror \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM9
@@ -132,6 +132,12 @@ bgtopTWL.s			:	../$(IMAGES)/bgtopTWL.bmp
 	grit	$< -gB4 -gzl -fts -o $@ -q
 	
 bgsubTWL.s			:	../$(IMAGES)/bgsubTWL.bmp
+	grit	$< -gB4 -gzl -fts -o $@ -q
+
+bgsubbootloader.s	:	../$(IMAGES)/bgsubbootloader.bmp
+	grit	$< -gB4 -gzl -fts -o $@ -q
+	
+bgsubbootloadertwl.s :	../$(IMAGES)/bgsubbootloadertwl.bmp
 	grit	$< -gB4 -gzl -fts -o $@ -q
 
 cursor.s		:	../$(IMAGES)/cursor.bmp

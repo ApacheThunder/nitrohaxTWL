@@ -94,7 +94,7 @@ static u32* hookInterruptHandler (u32* addr, size_t size) {
 	return actualTableAddr;
 }
 
-int arm7_hookGame (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cheatEngineLocation) {
+u32 arm7_hookGame (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cheatEngineLocation) {
 	u32 oldReturn;
 	u32 cheatWord1, cheatWord2;
 	u32* cheatDest;

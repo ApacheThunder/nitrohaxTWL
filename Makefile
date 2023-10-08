@@ -46,8 +46,8 @@ $(TARGET).dsi	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
 BootLoader/load.bin	:	BootLoader/source/*
 	$(MAKE) -C BootLoader
 
-BootLoaderTWL/loadtwl.bin	:	BootLoaderTWL/source/*
-	$(MAKE) -C BootLoaderTWL
+BootLoaderNTR/loadntr.bin	:	BootLoaderNTR/source/*
+	$(MAKE) -C BootLoaderNTR
 	
 	
 arm9/data/load.bin	:	BootLoader/load.bin
@@ -55,7 +55,7 @@ arm9/data/load.bin	:	BootLoader/load.bin
 	cp $< $@
 
 	
-arm9/data/loadtwl.bin	:	BootLoaderTWL/loadtwl.bin
+arm9/data/loadntr.bin	:	BootLoaderNTR/loadntr.bin
 	mkdir -p $(@D)
 	cp $< $@
 
@@ -73,7 +73,7 @@ arm7/$(TARGET).elf:
 	$(MAKE) -C arm7
 	
 #---------------------------------------------------------------------------------
-arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/data/loadtwl.bin arm9/source/version.h
+arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/data/loadntr.bin arm9/source/version.h
 	$(MAKE) -C arm9
 
 #---------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ dist-src	:
 	arm7/Makefile arm7/source \
 	arm9/Makefile arm9/source arm9/graphics \
 	BootLoader/Makefile BootLoader/load.ld BootLoader/source \
-	BootLoaderTWL/Makefile BootLoaderTWL/loadtwl.ld BootLoaderTWL/source
+	BootLoaderNTR/Makefile BootLoaderNTR/load.ld BootLoaderNTR/source
 
 dist	:	dist-bin dist-src
 
@@ -96,7 +96,7 @@ clean:
 	$(MAKE) -C arm9 clean
 	$(MAKE) -C arm7 clean
 	$(MAKE) -C BootLoader clean
-	$(MAKE) -C BootLoaderTWL clean
+	$(MAKE) -C BootLoaderNTR clean
 	rm -f arm9/data/load.bin
-	rm -f arm9/data/loadtwl.bin
+	rm -f arm9/data/loadntr.bin
 	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).dsi $(TARGET).arm7 $(TARGET).arm9

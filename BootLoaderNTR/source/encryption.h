@@ -16,20 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CHEAT_ENGINE_ARM7_H
-#define CHEAT_ENGINE_ARM7_H
+#ifndef ENCRYPTION_H
+#define ENCRYPTION_H
 
+#include <nds/ndstypes.h>
+void init_keycode (u32 idcode, u32 level, u32 modulo);
+void crypt_64bit_down (u32* ptr);
+void crypt_64bit_up (u32* ptr);
 
-#ifdef __cplusplus
-extern "C" {
 #endif
-
-
-void runCheatEngineCheck (void);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // CHEAT_ENGINE_ARM7_H

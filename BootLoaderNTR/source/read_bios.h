@@ -15,15 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <nds/ndstypes.h>
 
-#include <nds.h>
-
-void runCheatEngineCheck (void)
-{
-	if(*((vu32*)0x027FFE24) == (u32)0x027FFE04)
-	{
-		irqDisable (IRQ_ALL);
-		*((vu32*)0x027FFE34) = (u32)0x06000000;
-		swiSoftReset();
-	} 
-}
+void readBios (u8* dest, u32 src, u32 size);

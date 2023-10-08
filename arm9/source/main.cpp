@@ -33,6 +33,8 @@
 
 const char TITLE_STRING[] = "Nitro Hax " VERSION_STRING "\nWritten by Chishm";
 
+sNDSHeaderExt* ndsHeaderExt;
+
 const char* defaultFiles[] = {
 	"cheats.xml", 
 	"/DS/NitroHax/cheats.xml",
@@ -40,10 +42,11 @@ const char* defaultFiles[] = {
 	"/NDS/NitroHax/cheats.xml",
 	"/data/NitroHax/cheats.xml",
 	"/_nds/NitroHax/cheats.xml",
-	"/cheats.xml"};
+	"/cheats.xml"
+};
 
 static bool ROMisDSiExclusive(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x03); }
-static bool ROMisDSiEnhanced(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x02); }
+// static bool ROMisDSiEnhanced(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x02); }
 
 static inline void ensure (bool condition, const char* errorMsg) {
 	if (!condition) {
@@ -73,8 +76,7 @@ void DoCartCheck() {
 }
 
 //---------------------------------------------------------------------------------
-int main(int argc, const char* argv[])
-{
+int main(int argc, const char* argv[]) {
     (void)argc;
     (void)argv;
 
@@ -86,7 +88,7 @@ int main(int argc, const char* argv[])
 	std::string filename;
 	int c;
 	FILE* cheatFile;
-	bool isTWLCart = false;
+	bool isTWLMode = false;
 	
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 
@@ -94,7 +96,8 @@ int main(int argc, const char* argv[])
 	ui.demo();
 	while(1);
 #endif
-
+	ensure(!isDSiMode() || (REG_SCFG_EXT & BIT(31)), "Nitrohax doesn't have the required permissions to run.");
+	
 	ensure (fatInitDefault(), "FAT init failed");
 
 	// Read cheat file
@@ -125,11 +128,11 @@ int main(int argc, const char* argv[])
 
 	sysSetCardOwner (BUS_OWNER_ARM9);
 	// Check if on DSi with unlocked SCFG, if not, then assume standard NTR precedure.
-	if ((REG_SCFG_EXT & BIT(31))) {
-		ui.showMessage ("Loaded codes\nChecking if a cart is inserted");
+	if (isDSiMode()) {
+		ui.showMessage ("Checking if a cart is inserted");
 		if (REG_SCFG_MC != 0x18)ui.showMessage ("Insert Game");
 		while (REG_SCFG_MC != 0x18)DoCartCheck();
-		CardInit();
+		cardInit(ndsHeaderExt);
 	} else {
 		ui.showMessage ("Loaded codes\nYou can remove your flash card\nRemove DS Card");
 		do {
@@ -158,7 +161,7 @@ int main(int argc, const char* argv[])
 	if (!gameCodes)gameCodes = codelist;
 
 	ensure(!ROMisDSiExclusive((const tNDSHeader*)ndsHeader), "TWL exclusive games are not supported!");
-	isTWLCart = ROMisDSiEnhanced((const tNDSHeader*)ndsHeader);
+	isTWLMode = isDSiMode();
 	
 		
 	ui.cheatMenu (gameCodes, gameCodes);
@@ -175,7 +178,7 @@ int main(int argc, const char* argv[])
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 	ui.showMessage ("Running game");
 
-	runCheatEngine (cheatDest, curCheat * sizeof(u32), isTWLCart);
+	runCheatEngine (cheatDest, curCheat * sizeof(u32), isTWLMode);
 
 	while(1)swiWaitForVBlank();
 

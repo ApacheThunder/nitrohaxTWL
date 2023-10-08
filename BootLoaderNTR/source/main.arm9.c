@@ -28,7 +28,6 @@
 
 #define ARM9
 #undef ARM7
-
 #include <nds/memory.h>
 #include <nds/arm9/video.h>
 #include <nds/arm9/input.h>
@@ -39,16 +38,13 @@
 #include <nds/ipc.h>
 
 #include "common.h"
-#include "miniConsole.h"
-
-tNDSHeader* ndsHeader = NULL;
+#include "miniconsole.h"
 
 volatile int arm9_stateFlag = ARM9_BOOT;
 volatile u32 arm9_errorCode = 0xFFFFFFFF;
 volatile bool arm9_errorClearBG = false;
 volatile u32 arm9_BLANK_RAM = 0;
 volatile u32 defaultFontPalSlot = 0x16;
-bool arm9_isSdk5 = false;
 
 static char TXT_STATUS[] = "STATUS: ";
 static char TXT_ERROR[] = "ERROR: ";
@@ -66,6 +62,8 @@ static char ERRTXT_HEAD_CRC[] = "HEADER CRC";
 static char ERRTXT_NOCHEAT[] = "NO CHEATS FOUND";
 static char ERRTXT_HOOK[] = "CHEAT HOOK FAIL";
 static char NEW_LINE[] = "\n";
+
+
 /*-------------------------------------------------------------------------
 External functions
 --------------------------------------------------------------------------*/
@@ -160,13 +158,6 @@ Jumps to the ARM9 NDS binary in sync with the  ARM7
 Written by Darkain, modified by Chishm
 --------------------------------------------------------------------------*/
 void arm9_main (void) {
-
-	if (REG_SCFG_EXT & BIT(31)) {
-		REG_MBK6 = 0x00003000;
-		REG_MBK7 = 0x00003000;
-		REG_MBK8 = 0x00003000;
-	}
-	
 	register int i;
 
 	//set shared ram to ARM7
@@ -177,9 +168,9 @@ void arm9_main (void) {
 	REG_IME = 0;
 	REG_IE = 0;
 	REG_IF = ~0;
-
-	arm9_errorCode = ERR_NONE;
 	
+	arm9_errorCode = ERR_NONE;
+
 	// Synchronise start
 	ipcSendState(ARM9_START);
 	while (ipcRecvState() != ARM7_START);
@@ -204,24 +195,15 @@ void arm9_main (void) {
 	REG_IPC_FIFO_CR = IPC_FIFO_ENABLE | IPC_FIFO_SEND_CLEAR;
 	REG_IPC_FIFO_CR = 0;
 
-	
-//	Blank out VRAM
-//	VRAM_A_CR = 0x80; // Don't clear this one to make transition into game smoother. (still gets cleared after final ipcRecvState while loop)
+	// Blank out VRAM
 	VRAM_B_CR = 0x80;
-//	VRAM_C_CR = 0x80; // Don't clear this one to save console for bootloader use. (and for same reason as VRAM_A)
-//	VRAM_D_CR = 0x80; // Don't mess with the VRAM used for execution
+// Don't mess with the VRAM used for execution
+//	VRAM_D_CR = 0x80; 
 	VRAM_E_CR = 0x80;
 	VRAM_F_CR = 0x80;
 	VRAM_G_CR = 0x80;
 	VRAM_H_CR = 0x80;
 	VRAM_I_CR = 0x80;
-	VRAM_B_CR = 0;
-//	VRAM_D_CR = 0; // Don't mess with the ARM7's VRAM
-	VRAM_E_CR = 0;
-	VRAM_F_CR = 0;
-	VRAM_G_CR = 0;
-	VRAM_H_CR = 0;
-	VRAM_I_CR = 0;
 
 	// Clear out ARM9 DMA channels
 	for (i=0; i<4; i++) {
@@ -231,6 +213,15 @@ void arm9_main (void) {
 		TIMER_CR(i) = 0;
 		TIMER_DATA(i) = 0;
 	}
+
+	VRAM_B_CR = 0;
+//	Don't mess with the VRAM used for execution
+//	VRAM_D_CR = 0;
+	VRAM_E_CR = 0;
+	VRAM_F_CR = 0;
+	VRAM_G_CR = 0;
+	VRAM_H_CR = 0;
+	VRAM_I_CR = 0;
 	
 	defaultFontPalSlot = 31;
 	miniconsoleSetWindow(5, 10, 24, 2); // Set console position for debug text if/when needed.
@@ -246,32 +237,31 @@ void arm9_main (void) {
 			arm9_errorOutput (arm9_errorCode);
 			arm9_errorCode = ERR_NONE;
 		}
-		if (ipcRecvState() == ARM7_SETSCFG) {
-			if (REG_SCFG_EXT & BIT(31)) {
-				REG_SCFG_EXT = 0x83000000;
-				if (arm9_isSdk5 && ndsHeader->unitCode > 0) {
-					// REG_SCFG_EXT |= BIT(13);	// Extended VRAM Access
-					REG_SCFG_CLK = 0x87;
-					REG_SCFG_RST = 1;
-				} else {
-					REG_SCFG_CLK = 0x80;
-				}
-				REG_SCFG_EXT &= ~(1UL << 31); // lock SCFG
-			}
-			ipcSendState(ARM9_SETSCFG);
-		}
 	}
 	
-	// We clear the reset of VRAM and screen stuff now that arm9_errorOutput is not needed if it makes it this far.
-	BG_PALETTE[0] = 0xFFFF;
-	dmaFill((u16*)&arm9_BLANK_RAM, BG_PALETTE+1, (2*1024)-2);
-	dmaFillWords(0, (void*)0x04000000, 0x56);
-	dmaFillWords(0, (void*)0x04001008, 0x56);
 	VRAM_A_CR = 0x80;
+	VRAM_C_CR = 0x80;
+	BG_PALETTE[0] = 0xFFFF;
+	BG_PALETTE_SUB[0] = 0xFFFF;
+	dmaFill((void*)&arm9_BLANK_RAM, BG_PALETTE+1, (2*1024)-2);
+	dmaFill((void*)&arm9_BLANK_RAM, OAM,     2*1024);
+	dmaFill((void*)&arm9_BLANK_RAM, VRAM_A,  256*1024);		// Banks A, B
+	// dmaFill((void*)&arm9_BLANK_RAM, VRAM_D,  272*1024);		// Banks D, E, F, G, H, I
+
+	// Clear out display registers
+	vu16 *mainregs = (vu16*)0x04000000;
+	vu16 *subregs = (vu16*)0x04001000;
+	for (i=0; i<43; i++) {
+		mainregs[i] = 0;
+		subregs[i] = 0;
+	}
 	REG_DISPSTAT = 0;
 	videoSetMode(0);
 	videoSetModeSub(0);
-	REG_POWERCNT = 0x820F;
+	VRAM_A_CR = 0;
+	VRAM_C_CR = 0;
+	REG_POWERCNT  = 0x820F;
+
 	arm9_reset();
 }
 

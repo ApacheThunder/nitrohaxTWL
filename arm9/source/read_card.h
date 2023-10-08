@@ -40,7 +40,6 @@ extern u32 cardNandRomEnd;
 extern u32 cardNandRwStart;
 
 int cardInit (sNDSHeaderExt* ndsHeader);
-int CardInit (void);
 
 void cardRead (u32 src, void* dest, bool nandSave);
 

@@ -18,9 +18,7 @@
 
 #include <string.h>
 #include "encryption.h"
-#include "key1.h"
-#include "key2.h"
-#include "tonccpy.h"
+#include "read_bios.h"
 
 #define KEYSIZE 0x1048
 
@@ -86,7 +84,7 @@ void apply_keycode (u32 modulo) {
 
 	crypt_64bit_up (&keycode[1]);
 	crypt_64bit_up (&keycode[0]);
-	toncset (scratch, 0, 8);
+	memset (scratch, 0, 8);
 
 	for (i = 0; i < 0x12; i+=1) {
 		keybuf[i] = keybuf[i] ^ bswap_32bit (keycode[i % modulo]);
@@ -98,8 +96,8 @@ void apply_keycode (u32 modulo) {
 	}
 }
 
-void init_keycode (u32 idcode, u32 level, u32 modulo, int iCardDevice) {
-	tonccpy ((u8*)keybuf, (iCardDevice ? gEncrDataTwl : gEncrData), KEYSIZE);
+void init_keycode (u32 idcode, u32 level, u32 modulo) {
+	readBios ((u8*)keybuf, 0x30, KEYSIZE);
 	keycode[0] = idcode;
 	keycode[1] = idcode/2;
 	keycode[2] = idcode*2;

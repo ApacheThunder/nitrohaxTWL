@@ -14,7 +14,7 @@ endif
 #---------------------------------------------------------------------------------
 export TARGET		:= load
 BUILD		:=	build
-SOURCES		:=	source source/patches 
+SOURCES		:=	source source/patches
 INCLUDES	:=	build
 SPECS		:=  specs
  
@@ -64,7 +64,7 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
- 
+
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
  
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
@@ -109,8 +109,6 @@ $(TARGETBIN)	:	$(ARM7ELF)
 $(ARM7ELF)	:	$(OFILES)
 	@echo linking $(notdir $@)
 	@$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
- 
-
 
  
 #---------------------------------------------------------------------------------------

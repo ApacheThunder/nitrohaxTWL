@@ -28,7 +28,11 @@
 #include "encryption.h"
 #include "common.h"
 
-typedef union { char title[4]; u32 key; } GameCode;
+typedef union
+{
+	char title[4];
+	u32 key;
+} GameCode;
 
 static u32 portFlags = 0;
 static u32 secureAreaData[CARD_SECURE_AREA_SIZE/sizeof(u32)];
@@ -40,12 +44,18 @@ static u32 getRandomNumber(void) {
 				// guaranteed to be random.
 }
 
-static void decryptSecureArea (u32 gameCode, u32* secureArea) {
+static void decryptSecureArea (u32 gameCode, u32* secureArea)
+{
 	int i;
+
 	init_keycode (gameCode, 2, 8);
 	crypt_64bit_down (secureArea);
+
 	init_keycode (gameCode, 3, 8);
-	for (i = 0; i < 0x200; i+= 2) { crypt_64bit_down (secureArea + i); }
+
+	for (i = 0; i < 0x200; i+= 2) {
+		crypt_64bit_down (secureArea + i);
+	}
 }
 
 static struct {
@@ -77,11 +87,14 @@ static void initKey1Encryption (u8* cmdData) {
 }
 
 // Note: cmdData must be aligned on a word boundary
-static void createEncryptedCommand (u8 command, u8* cmdData, u32 block) {
+static void createEncryptedCommand (u8 command, u8* cmdData, u32 block)
+{
 	unsigned long iii, jjj;
 
-	if (command != CARD_CMD_SECURE_READ)block = key1data.llll;
-	
+	if (command != CARD_CMD_SECURE_READ) {
+		block = key1data.llll;
+	}
+
 	if (command == CARD_CMD_ACTIVATE_SEC) {
 		iii = key1data.mmm;
 		jjj = key1data.nnn;
@@ -120,7 +133,8 @@ static void cardDelay (u16 readTimeout) {
 }
 
 
-int cardInit (sNDSHeaderExt* ndsHeader, u32* chipID) {
+int cardInit (tNDSHeader* ndsHeader, u32* chipID)
+{
 	u32 portFlagsKey1, portFlagsSecRead;
 	bool normalChip;	// As defined by GBAtek, normal chip secure area is accessed in blocks of 0x200, other chip in blocks of 0x1000
 	u32* secureArea;
@@ -128,9 +142,11 @@ int cardInit (sNDSHeaderExt* ndsHeader, u32* chipID) {
 	int i;
 	u8 cmdData[8] __attribute__ ((aligned));
 	GameCode* gameCode;
-	
+
 	// Dummy command sent after card reset
-	cardParamCommand (CARD_CMD_DUMMY, 0, CARD_ACTIVATE | CARD_nRESET | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F), NULL, 0);
+	cardParamCommand (CARD_CMD_DUMMY, 0,
+		CARD_ACTIVATE | CARD_nRESET | CARD_CLK_SLOW | CARD_BLK_SIZE(1) | CARD_DELAY1(0x1FFF) | CARD_DELAY2(0x3F),
+		NULL, 0);
 
 	// Verify that the ndsHeader is packed correctly, now that it's no longer __packed__
 	static_assert(sizeof(tNDSHeader) == 0x160, "tNDSHeader not packed properly");

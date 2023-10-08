@@ -136,4 +136,3 @@ typedef struct {
 //static_assert(sizeof(sNDSHeaderExt) == 0x3B4, "sizeof(sNDSHeaderExt) is not 0x3B4 bytes");
 
 #endif // NDS_HEADER2
-
