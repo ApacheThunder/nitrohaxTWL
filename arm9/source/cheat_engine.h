@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 
-void runCheatEngine (void* cheats, int cheatLength, bool isTWLMode);
+void runCheatEngine (void* cheats, int cheatLength);
 
 
 #ifdef __cplusplus

@@ -11,7 +11,7 @@ export TARGET		:=	NitroHax
 export TOPDIR		:=	$(CURDIR)
 
 export VERSION_MAJOR	:= 0
-export VERSION_MINOR	:= 95
+export VERSION_MINOR	:= 96
 export VERSTRING	:=	$(VERSION_MAJOR).$(VERSION_MINOR)
 
 
@@ -45,17 +45,8 @@ $(TARGET).dsi	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
 #---------------------------------------------------------------------------------
 BootLoader/load.bin	:	BootLoader/source/*
 	$(MAKE) -C BootLoader
-
-BootLoaderNTR/loadntr.bin	:	BootLoaderNTR/source/*
-	$(MAKE) -C BootLoaderNTR
-	
 	
 arm9/data/load.bin	:	BootLoader/load.bin
-	mkdir -p $(@D)
-	cp $< $@
-
-	
-arm9/data/loadntr.bin	:	BootLoaderNTR/loadntr.bin
 	mkdir -p $(@D)
 	cp $< $@
 
@@ -73,7 +64,7 @@ arm7/$(TARGET).elf:
 	$(MAKE) -C arm7
 	
 #---------------------------------------------------------------------------------
-arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/data/loadntr.bin arm9/source/version.h
+arm9/$(TARGET).elf	:	arm9/data/load.bin arm9/source/version.h
 	$(MAKE) -C arm9
 
 #---------------------------------------------------------------------------------
@@ -86,8 +77,7 @@ dist-src	:
 	Makefile icon.bmp LICENSE README.md \
 	arm7/Makefile arm7/source \
 	arm9/Makefile arm9/source arm9/graphics \
-	BootLoader/Makefile BootLoader/load.ld BootLoader/source \
-	BootLoaderNTR/Makefile BootLoaderNTR/load.ld BootLoaderNTR/source
+	BootLoader/Makefile BootLoader/load.ld BootLoader/source
 
 dist	:	dist-bin dist-src
 
@@ -96,7 +86,6 @@ clean:
 	$(MAKE) -C arm9 clean
 	$(MAKE) -C arm7 clean
 	$(MAKE) -C BootLoader clean
-	$(MAKE) -C BootLoaderNTR clean
+	rm -fr arm9/data
 	rm -f arm9/data/load.bin
-	rm -f arm9/data/loadntr.bin
 	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).dsi $(TARGET).arm7 $(TARGET).arm9

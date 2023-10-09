@@ -20,17 +20,9 @@
 #include <nds/arm7/input.h>
 #include <nds/system.h>
 
-/*void runCheatEngineCheck (void) {
-	if(*((vu32*)0x027FFE24) == (u32)0x027FFE04) {
-		irqDisable (IRQ_ALL);
-		*((vu32*)0x027FFE34) = (u32)0x06020000;
-		swiSoftReset();
-	}
-}*/
-
 void VcountHandler() { inputGetAndSend(); }
 
-void VblankHandler(void) { }
+void VblankHandler() { }
 
 //---------------------------------------------------------------------------------
 int main(void) {
@@ -54,15 +46,13 @@ int main(void) {
 
 	irqEnable( IRQ_VBLANK | IRQ_VCOUNT);
 
-	if (REG_SNDEXTCNT != 0) {	
+	// If on DSi, enable console soft reboot from power button short press.
+	if (REG_SNDEXTCNT != 0) {
 		i2cWriteRegister(0x4A, 0x12, 0x00);	// Press power-button for auto-reset
 		i2cWriteRegister(0x4A, 0x70, 0x01);	// Bootflag = Warmboot/SkipHealthSafety
 	}
 
 	// Keep the ARM7 mostly idle
-	while (1) {
-		// runCheatEngineCheck();
-		swiWaitForVBlank();
-	}
+	while (1)swiWaitForVBlank();
 }
 

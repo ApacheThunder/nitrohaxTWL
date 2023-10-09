@@ -17,6 +17,7 @@
 */
 
 #include <nds.h>
+#include <nds/arm9/decompress.h>
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -26,7 +27,6 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include "ui.h"
-#include "bios_decompress_callback.h"
 
 #include "font.h"
 #include "bgtop.h"
@@ -137,14 +137,16 @@ UserInterface::UserInterface (void)
 	REG_BG2CNT_SUB = BG_MAP_BASE(4) | BG_COLOR_16 | BG_TILE_BASE(6) | BG_PRIORITY(0);
 
 	// Set up background image
+	// Now using libnds's included decompress function for all of this.
+	// It ends up calling the same function the old code used.
 	if ((REG_SCFG_EXT & BIT(31))) {
-		swiDecompressLZSSVram ((void*)bgtopTWLTiles, (void*)CHAR_BASE_BLOCK(2), 0, &decompressBiosCallback);
-		swiDecompressLZSSVram ((void*)bgsubTWLTiles, (void*)CHAR_BASE_BLOCK_SUB(2), 0, &decompressBiosCallback);
+		decompress((void*)bgtopTWLTiles, (void*)CHAR_BASE_BLOCK(2), LZ77Vram);
+		decompress((void*)bgsubTWLTiles, (void*)CHAR_BASE_BLOCK_SUB(2), LZ77Vram);
 		vramcpy (&BG_PALETTE[0], bgtopTWLPal, bgtopTWLPalLen);
 		vramcpy (&BG_PALETTE_SUB[0], bgsubTWLPal, bgsubTWLPalLen);
 	} else {
-		swiDecompressLZSSVram ((void*)bgtopTiles, (void*)CHAR_BASE_BLOCK(2), 0, &decompressBiosCallback);
-		swiDecompressLZSSVram ((void*)bgsubTiles, (void*)CHAR_BASE_BLOCK_SUB(2), 0, &decompressBiosCallback);
+		decompress((void*)bgtopTiles, (void*)CHAR_BASE_BLOCK(2), LZ77Vram);
+		decompress((void*)bgsubTiles, (void*)CHAR_BASE_BLOCK_SUB(2), LZ77Vram);
 		vramcpy (&BG_PALETTE[0], bgtopPal, bgtopPalLen);
 		vramcpy (&BG_PALETTE_SUB[0], bgsubPal, bgsubPalLen);
 	}
@@ -168,12 +170,12 @@ UserInterface::UserInterface (void)
 
 	// Copy the font into top screen's tile base for BG2
 	u16* fontDestMain = (u16*)CHAR_BASE_BLOCK(6);
-	swiDecompressLZSSVram ((void*)fontTiles, fontDestMain, 0, &decompressBiosCallback);
+	decompress((void*)fontTiles, fontDestMain, LZ77Vram);
 	vramcpy (&BG_PALETTE[FONT_PALETTE * PALETTE_SIZE], fontPal, fontPalLen);
 
 	// Copy the font into sub screen's tile base for BG2
 	u16* fontDestSub = (u16*)CHAR_BASE_BLOCK_SUB(6);
-	swiDecompressLZSSVram ((void*)fontTiles, fontDestSub, 0, &decompressBiosCallback);
+	decompress((void*)fontTiles, fontDestSub, LZ77Vram);
 	vramcpy (&BG_PALETTE_SUB[FONT_PALETTE * PALETTE_SIZE], fontPal, fontPalLen);
 	BG_OFFSET_SUB[2].x = -4;
 	BG_OFFSET_SUB[2].y = -4;

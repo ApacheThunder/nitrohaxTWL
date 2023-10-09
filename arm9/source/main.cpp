@@ -46,7 +46,6 @@ const char* defaultFiles[] = {
 };
 
 static bool ROMisDSiExclusive(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x03); }
-// static bool ROMisDSiEnhanced(const tNDSHeader* ndsHeader) { return (ndsHeader->unitCode == 0x02); }
 
 static inline void ensure (bool condition, const char* errorMsg) {
 	if (!condition) {
@@ -88,7 +87,6 @@ int main(int argc, const char* argv[]) {
 	std::string filename;
 	int c;
 	FILE* cheatFile;
-	bool isTWLMode = false;
 	
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 
@@ -96,7 +94,7 @@ int main(int argc, const char* argv[]) {
 	ui.demo();
 	while(1);
 #endif
-	ensure(!isDSiMode() || (REG_SCFG_EXT & BIT(31)), "Nitrohax doesn't have the required permissions to run.");
+	ensure(!isDSiMode() || (REG_SCFG_EXT & BIT(31)), "Nitrohax (for DSi) doesn't have the required permissions to run.");
 	
 	ensure (fatInitDefault(), "FAT init failed");
 
@@ -161,9 +159,7 @@ int main(int argc, const char* argv[]) {
 	if (!gameCodes)gameCodes = codelist;
 
 	ensure(!ROMisDSiExclusive((const tNDSHeader*)ndsHeader), "TWL exclusive games are not supported!");
-	isTWLMode = isDSiMode();
-	
-		
+			
 	ui.cheatMenu (gameCodes, gameCodes);
 
 	cheatDest = (u32*) malloc(CHEAT_MAX_DATA_SIZE);
@@ -178,7 +174,7 @@ int main(int argc, const char* argv[]) {
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 	ui.showMessage ("Running game");
 
-	runCheatEngine (cheatDest, curCheat * sizeof(u32), isTWLMode);
+	runCheatEngine (cheatDest, curCheat * sizeof(u32));
 
 	while(1)swiWaitForVBlank();
 

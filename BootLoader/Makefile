@@ -14,7 +14,7 @@ endif
 #---------------------------------------------------------------------------------
 export TARGET		:= load
 BUILD		:=	build
-SOURCES		:=	source source/patches
+SOURCES		:=	source source/patches 
 INCLUDES	:=	build
 SPECS		:=  specs
  
@@ -23,8 +23,8 @@ SPECS		:=  specs
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb-interwork -march=armv4t -mtune=arm7tdmi
 
-CFLAGS	:=	-g -Wall -O2\
-			-fomit-frame-pointer\
+CFLAGS	:=	-g -Wall -O2 \
+			-fomit-frame-pointer \
 			-ffast-math \
 			-Wall -Wextra -Werror \
 			$(ARCH)
@@ -64,7 +64,7 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-
+ 
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
  
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
@@ -89,7 +89,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) *.elf load.bin
+	@rm -fr $(BUILD) *.elf $(TARGET).bin
  
  
 #---------------------------------------------------------------------------------
@@ -109,6 +109,8 @@ $(TARGETBIN)	:	$(ARM7ELF)
 $(ARM7ELF)	:	$(OFILES)
 	@echo linking $(notdir $@)
 	@$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+ 
+
 
  
 #---------------------------------------------------------------------------------------

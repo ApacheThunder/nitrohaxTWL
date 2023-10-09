@@ -50,8 +50,7 @@ enum ARM9_STATE {
 	ARM9_START = 1,
 	ARM9_RESET = 2,
 	ARM9_READY = 3,
-	ARM9_MEMCLR = 4,
-	ARM9_SETSCFG = 5
+	ARM9_MEMCLR = 4
 };
 
 enum ARM7_STATE {
@@ -63,14 +62,10 @@ enum ARM7_STATE {
 	ARM7_LOADBIN = 5,
 	ARM7_HOOKBIN = 6,
 	ARM7_BOOTBIN = 7,
-	ARM7_ERR = 8,
-	ARM7_SETSCFG
+	ARM7_ERR = 8
 };
 
 extern volatile u32 arm9_errorCode;
-extern bool arm9_isSdk5;
-
-extern tNDSHeader* ndsHeader;
 
 static inline void dmaFill(const void* src, void* dest, uint32 size) {
 	DMA_SRC(3)  = (uint32)src;

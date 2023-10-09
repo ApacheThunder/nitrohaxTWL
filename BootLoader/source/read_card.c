@@ -146,9 +146,9 @@ int cardInit (sNDSHeaderExt* ndsHeader, u32* chipID) {
 	}
 
 	// Check logo CRC
-	if (ndsHeader->logoCRC16 != 0xCF56) {
+	/*if (ndsHeader->logoCRC16 != 0xCF56) {
 		return ERR_LOGO_CRC;
-	}
+	}*/
 
 	// Initialise blowfish encryption for KEY1 commands and decrypting the secure area
 	gameCode = (GameCode*)ndsHeader->gameCode;
