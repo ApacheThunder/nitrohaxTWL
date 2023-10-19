@@ -246,8 +246,10 @@ u32 arm7_loadBinary (void) {
 	errorCode = cardInit((sNDSHeaderExt*)twlHeaderTemp, &chipID);
 	if (errorCode)return errorCode;
 	
+	ndsHeader = loadHeader(twlHeaderTemp); // copy twlHeaderTemp to ndsHeader location
+	
 	// Fix Pokemon games needing header data.
-	copyLoop((u32*)NDS_HEADER_POKEMON, (u32*)ndsHeader, 0x170);
+	copyLoop((u32*)NDS_HEADER_POKEMON, (u32*)NDS_HEADER, 0x170);
 
 	char* romTid = (char*)NDS_HEADER_POKEMON+0xC;
 	if (   memcpy(romTid, "ADA", 3) == 0 // Diamond
@@ -261,10 +263,8 @@ u32 arm7_loadBinary (void) {
 		memcpy((char*)NDS_HEADER_POKEMON+0xC, gameCodePokemon, 4);
 	}
 	
-	cardRead(twlHeaderTemp->ndshdr.arm9romOffset, (u32*)twlHeaderTemp->ndshdr.arm9destination, twlHeaderTemp->ndshdr.arm9binarySize);
-	cardRead(twlHeaderTemp->ndshdr.arm7romOffset, (u32*)twlHeaderTemp->ndshdr.arm7destination, twlHeaderTemp->ndshdr.arm7binarySize);
-	
-	ndsHeader = loadHeader(twlHeaderTemp); // copy twlHeaderTemp to ndsHeader location
+	cardRead(ndsHeader->arm9romOffset, (u32*)ndsHeader->arm9destination, ndsHeader->arm9binarySize);
+	cardRead(ndsHeader->arm7romOffset, (u32*)ndsHeader->arm7destination, ndsHeader->arm7binarySize);
 	
 	return ERR_NONE;
 }
