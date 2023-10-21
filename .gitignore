@@ -11,4 +11,5 @@ update.cmd
 *.nds
 *.dsi
 *.app
+*.cia
 *.elf
