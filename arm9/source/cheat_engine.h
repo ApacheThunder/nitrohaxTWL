@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 
-void runCheatEngine (void* cheats, int cheatLength);
+void runCheatEngine (void* cheats, int cheatLength, bool isTWLCart);
 
 
 #ifdef __cplusplus
@@ -35,3 +35,4 @@ void runCheatEngine (void* cheats, int cheatLength);
 #endif
 
 #endif // CHEAT_ENGINE_H
+

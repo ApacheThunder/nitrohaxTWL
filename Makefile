@@ -10,8 +10,8 @@ include $(DEVKITARM)/ds_rules
 export TARGET		:=	NitroHax
 export TOPDIR		:=	$(CURDIR)
 
-export VERSION_MAJOR	:= 0
-export VERSION_MINOR	:= 97
+export VERSION_MAJOR	:= 1
+export VERSION_MINOR	:= 0
 export VERSTRING	:=	$(VERSION_MAJOR).$(VERSION_MINOR)
 
 
@@ -36,6 +36,11 @@ $(TARGET).nds	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
 
 			
 $(TARGET).dsi	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
+	ndstool	-c $(TARGET).dsi -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
+			-b $(CURDIR)/icon.bmp "Nitro Hax for DSi;DS Game Cheat Tool;Created by Chishm" \
+			-g CHTE 01 "NITROHAXTWL" -z 80040000 -u 00030004 -a 00000038 -p 0000
+			
+00000000.app	:	arm7/$(TARGET).elf arm9/$(TARGET).elf
 	ndstool	-c $(TARGET).dsi -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
 			-b $(CURDIR)/icon.bmp "Nitro Hax for DSi;DS Game Cheat Tool;Created by Chishm" \
 			-g CHTE 01 "NITROHAXTWL" -z 80040000 -u 00030004 -a 00000038 -p 0000
@@ -88,4 +93,4 @@ clean:
 	$(MAKE) -C BootLoader clean
 	rm -fr arm9/data
 	rm -f arm9/data/load.bin
-	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).dsi $(TARGET).arm7 $(TARGET).arm9
+	rm -f $(TARGET).ds.gba $(TARGET).nds $(TARGET).dsi 00000000.app $(TARGET).arm7 $(TARGET).arm9

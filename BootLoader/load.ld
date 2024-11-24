@@ -6,7 +6,7 @@ MEMORY {
 
 	vram	: ORIGIN = 0x06020000, LENGTH = 64K		/* Reserve last 64K for cheats */
 	/* arm9ram	: ORIGIN = 0x026FD800, LENGTH = 4K		Used for the ARM9's functions */
-	arm9ram	: ORIGIN = 0x027FC800, LENGTH = 4K		/* Used for the ARM9's functions */
+	arm9ram	: ORIGIN = 0x027FD000, LENGTH = 4K		/* Used for the ARM9's functions */
 }
 
 __vram_start	=	ORIGIN(vram);

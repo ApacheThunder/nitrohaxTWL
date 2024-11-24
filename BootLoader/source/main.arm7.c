@@ -44,7 +44,8 @@
 
 #include "common.h"
 #include "read_card.h"
-#include "cheat.h"
+// #include "cheat.h"
+#include "hook.h"
 
 /*-------------------------------------------------------------------------
 External functions
@@ -54,12 +55,13 @@ extern void arm7_reset (void);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Important things
-#define NDS_HEADER		   0x027FFE00
-#define NDS_HEADER_POKEMON 0x027FF000
-#define TWL_HEADER         0x027FE000
+#define NDS_HEADER		   0x02FFFE00
+#define NDS_HEADER_POKEMON 0x02FFF000
+#define TWL_HEADER         0x02FFE000
 tNDSHeader* ndsHeader;
 
-#define CHEAT_ENGINE_LOCATION	0x027FC000 // Moved to avoid conflict with TWL_HEADER region
+#define CHEAT_ENGINE_LOCATION	0x02FFC000 // Moved to avoid conflict with TWL_HEADER region
+#define CHEAT_ENGINE_LOCATION_TWL	0x02400000 // Moved to avoid conflict with TWL_HEADER region
 #define CHEAT_DATA_LOCATION  	0x06030000
 
 #define REG_GPIO_WIFI *(vu16*)0x4004C04
@@ -163,7 +165,7 @@ void arm7_resetMemory (void) {
 	arm7_clearmem ((void*)0x037F8000, 96*1024);
 
 	// clear most of EXRAM - except after 0x022FD800, which has the ARM9 code
-	arm7_clearmem ((void*)0x02000000, 0x002FD800);
+	arm7_clearmem ((void*)0x02000000, 0x002FD000);
 
 	// clear last part of EXRAM, skipping the ARM9's section
 	arm7_clearmem ((void*)0x023FE000, 0x2000);
@@ -182,25 +184,69 @@ void arm7_resetMemory (void) {
 	arm7_readFirmware((u32)0x03FF70, &settings2, 0x1);
 
 	if (settings1 > settings2) {
-		arm7_readFirmware((u32)0x03FE00, (u8*)0x027FFC80, 0x70);
-		arm7_readFirmware((u32)0x03FF00, (u8*)0x027FFD80, 0x70);
+		arm7_readFirmware((u32)0x03FE00, (u8*)0x02FFFC80, 0x70);
+		arm7_readFirmware((u32)0x03FF00, (u8*)0x02FFFD80, 0x70);
 	} else {
-		arm7_readFirmware((u32)0x03FF00, (u8*)0x027FFC80, 0x70);
-		arm7_readFirmware((u32)0x03FE00, (u8*)0x027FFD80, 0x70);
+		arm7_readFirmware((u32)0x03FF00, (u8*)0x02FFFC80, 0x70);
+		arm7_readFirmware((u32)0x03FE00, (u8*)0x02FFFD80, 0x70);
 	}
 
 	// Load FW header
-	arm7_readFirmware((u32)0x000000, (u8*)0x027FF830, 0x20);
+	arm7_readFirmware((u32)0x000000, (u8*)0x02FFF830, 0x20);
 }
 
 static void setMemoryAddress(const tNDSHeader* ndsHeader) {
+	if (ndsHeader->unitCode > 0) {
+		copyLoop((u32*)0x02FFFA80, (u32*)ndsHeader, 0x160);	// Make a duplicate of DS header
+
+		*(u32*)(0x02FFA680) = 0x02FD4D80;
+		*(u32*)(0x02FFA684) = 0x00000000;
+		*(u32*)(0x02FFA688) = 0x00001980;
+		
+		*(u32*)(0x02FFF00C) = 0x0000007F;
+		*(u32*)(0x02FFF010) = 0x550E25B8;
+		*(u32*)(0x02FFF014) = 0x02FF4000;
+
+		// Set region flag
+		if (strncmp(getRomTid(ndsHeader)+3, "J", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 0;
+		} else if (strncmp(getRomTid(ndsHeader)+3, "E", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 1;
+		} else if (strncmp(getRomTid(ndsHeader)+3, "P", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 2;
+		} else if (strncmp(getRomTid(ndsHeader)+3, "U", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 3;
+		} else if (strncmp(getRomTid(ndsHeader)+3, "C", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 4;
+		} else if (strncmp(getRomTid(ndsHeader)+3, "K", 1) == 0) {
+			*(u8*)(0x02FFFD70) = 5;
+		}
+	}
+
+    // Set memory values expected by loaded NDS
+    // from NitroHax, thanks to Chism
+	*((u32*)0x02FFF800) = chipID;					// CurrentCardID
+	*((u32*)0x02FFF804) = chipID;					// Command10CardID
+	*((u16*)0x02FFF808) = ndsHeader->headerCRC16;	// Header Checksum, CRC-16 of [000h-15Dh]
+	*((u16*)0x02FFF80A) = ndsHeader->secureCRC16;	// Secure Area Checksum, CRC-16 of [ [20h]..7FFFh]
+	*((u16*)0x02FFF850) = 0x5835;
+	// Copies of above
+	*((u32*)0x02FFFC00) = chipID;					// CurrentCardID
+	*((u32*)0x02FFFC04) = chipID;					// Command10CardID
+	*((u16*)0x02FFFC08) = ndsHeader->headerCRC16;	// Header Checksum, CRC-16 of [000h-15Dh]
+	*((u16*)0x02FFFC0A) = ndsHeader->secureCRC16;	// Secure Area Checksum, CRC-16 of [ [20h]..7FFFh]
+	*((u16*)0x02FFFC10) = 0x5835;
+	*((u16*)0x02FFFC40) = 0x01;						// Boot Indicator -- EXTREMELY IMPORTANT!!! Thanks to cReDiAr
+}
+
+static void setMemoryAddressTWL(const tNDSHeader* ndsHeader) {
 	if (ndsHeader->unitCode > 0) {
 		copyLoop((u32*)0x027FFA80, (u32*)ndsHeader, 0x160);	// Make a duplicate of DS header
 
 		*(u32*)(0x027FA680) = 0x02FD4D80;
 		*(u32*)(0x027FA684) = 0x00000000;
 		*(u32*)(0x027FA688) = 0x00001980;
-
+		
 		*(u32*)(0x027FF00C) = 0x0000007F;
 		*(u32*)(0x027FF010) = 0x550E25B8;
 		*(u32*)(0x027FF014) = 0x02FF4000;
@@ -235,12 +281,23 @@ static void setMemoryAddress(const tNDSHeader* ndsHeader) {
 	*((u16*)0x027FFC0A) = ndsHeader->secureCRC16;	// Secure Area Checksum, CRC-16 of [ [20h]..7FFFh]
 	*((u16*)0x027FFC10) = 0x5835;
 	*((u16*)0x027FFC40) = 0x01;						// Boot Indicator -- EXTREMELY IMPORTANT!!! Thanks to cReDiAr
-}
+	
+	
+	copyLoop((u32*)0x027FC000, (u32*)0x02FFC000, 0x1000);
+	copyLoop((u32*)0x027FF000, (u32*)0x02FFF000, 0x170);
+	copyLoop((u32*)0x027FFE00, (u32*)0x02FFFE00, 0x160);
+	copyLoop((u32*)0x027FE000, (u32*)0x02FFE000, 0x1000);
+		
+	copyLoop((u32*)0x027FF830, (u32*)0x02FFF830, 0x20);
+	copyLoop((u32*)0x027FFC80, (u32*)0x02FFFC80, 0x70);
+	copyLoop((u32*)0x027FFD80, (u32*)0x02FFFD80, 0x70);
+}   
 
 u32 arm7_loadBinary (void) {
 	u32 errorCode;
 	
-	tDSiHeader* twlHeaderTemp = (tDSiHeader*)CHEAT_ENGINE_LOCATION; // Use same region cheat engine goes. Cheat engine will replace this later when it's not needed.
+	tDSiHeader* twlHeaderTemp = (tDSiHeader*)0x02FFC000; // Use same region cheat engine goes. Cheat engine will replace this later when it's not needed.
+	// tDSiHeader* twlHeaderTemp = (tDSiHeader*)CHEAT_ENGINE_LOCATION; // Use same region cheat engine goes. Cheat engine will replace this later when it's not needed.
 
 	// Init card
 	errorCode = cardInit((sNDSHeaderExt*)twlHeaderTemp, &chipID);
@@ -274,18 +331,16 @@ u32 arm7_loadBinary (void) {
 // Main function
 void arm7_main (void) {
 	
-	if (REG_SNDEXTCNT != 0) {
-		if (REG_SCFG_EXT & BIT(31)) {
-			REG_MBK9=0xFCFFFF0F;
-			*((vu32*)REG_MBK1)=0x8D898581;
-			*((vu32*)REG_MBK2)=0x8C888480;
-			*((vu32*)REG_MBK3)=0x9C989490;
-			*((vu32*)REG_MBK4)=0x8C888480;
-			*((vu32*)REG_MBK5)=0x9C989490;
-			REG_MBK6=0x09403900;
-			REG_MBK7=0x09803940;
-			REG_MBK8=0x09C03980;
-		}
+	if ((REG_SNDEXTCNT != 0) && (REG_SCFG_EXT & BIT(31))) {
+		REG_MBK9=0xFCFFFF0F;
+		*((vu32*)REG_MBK1)=0x8D898581;
+		*((vu32*)REG_MBK2)=0x8C888480;
+		*((vu32*)REG_MBK3)=0x9C989490;
+		*((vu32*)REG_MBK4)=0x8C888480;
+		*((vu32*)REG_MBK5)=0x9C989490;
+		REG_MBK6=0x09403900;
+		REG_MBK7=0x09803940;
+		REG_MBK8=0x09C03980;
 	}
 	
 	u32 errorCode;
@@ -305,9 +360,7 @@ void arm7_main (void) {
 	// Get ARM7 to clear RAM
 	arm7_resetMemory();
 	
-	if (REG_SNDEXTCNT != 0) {
-		if (REG_SCFG_EXT & BIT(31))REG_SCFG_ROM = 0x703;
-	}
+	if ((REG_SNDEXTCNT != 0) && (REG_SCFG_EXT & BIT(31)))REG_SCFG_ROM = 0x703;
 
 	errorOutput(ERR_STS_LOAD_BIN, false);
 	
@@ -320,8 +373,14 @@ void arm7_main (void) {
 	if (REG_SNDEXTCNT != 0 && (REG_SCFG_EXT & BIT(31))) {
 		*(u16*)0x4000500 = 0x807F;
 		REG_GPIO_WIFI |= BIT(8);	// Old NDS-Wifi mode
-		REG_SCFG_CLK = 0x100;
-		REG_SCFG_EXT = 0x12A00000;
+		REG_SCFG_EXT = 0x92A40000;
+		if (ndsHeader->unitCode > 0) {
+			REG_SCFG_CLK = 0x187; 
+		} else { 
+			REG_SCFG_CLK = 0x100;
+			REG_SCFG_EXT &= ~(1UL << 18);
+		}
+		REG_SCFG_EXT &= ~(1UL << 31);
 	}
 	
 	errorOutput(ERR_STS_HOOK_BIN, false);
@@ -329,13 +388,20 @@ void arm7_main (void) {
 	ipcSendState(ARM7_HOOKBIN);
 
 	// Load the cheat engine and hook it into the ARM7 binary
-	errorCode = arm7_hookGame(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION);
+	// errorCode = arm7_hookGame(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION);
+	if (ndsHeader->unitCode > 0) {
+		errorCode = hookNdsRetail(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION_TWL);
+	} else {
+		errorCode = hookNdsRetail(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION);
+	}
+	
 	if (errorCode != ERR_NONE && errorCode != ERR_NOCHEAT) {
 		errorOutput(errorCode, false);
 		for (I = 0; I < 100; I++) { while(REG_VCOUNT!=191); while(REG_VCOUNT==191); } // Allow cheat hook fail message to display for a couple seconds
 	}
 
 	setMemoryAddress(ndsHeader);
+	if (ndsHeader->unitCode > 0)setMemoryAddressTWL(ndsHeader);
 
 	ipcSendState(ARM7_BOOTBIN);
 

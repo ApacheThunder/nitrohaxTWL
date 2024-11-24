@@ -44,7 +44,7 @@ int main(void) {
 	irqSet(IRQ_VCOUNT, VcountHandler);
 	irqSet(IRQ_VBLANK, VblankHandler);
 
-	irqEnable( IRQ_VBLANK | IRQ_VCOUNT);
+	irqEnable(IRQ_VBLANK | IRQ_VCOUNT);
 
 	// If on DSi, enable console soft reboot from power button short press.
 	if (REG_SNDEXTCNT != 0) {

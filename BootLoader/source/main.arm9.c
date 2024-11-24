@@ -42,7 +42,6 @@
 
 volatile int arm9_stateFlag = ARM9_BOOT;
 volatile u32 arm9_errorCode = 0xFFFFFFFF;
-volatile bool arm9_errorClearBG = false;
 volatile u32 arm9_BLANK_RAM = 0;
 volatile u32 defaultFontPalSlot = 0x16;
 

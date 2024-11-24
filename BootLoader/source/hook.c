@@ -16,13 +16,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "cheat.h"
+#include <nds/debug.h>
+#include <nds/system.h>
+
+#include "hook.h"
 #include "common.h"
+
+extern unsigned long language;
+extern bool gameSoftReset;
 
 extern unsigned long cheat_engine_size;
 extern unsigned long intr_orig_return_offset;
-
 extern const u8 cheat_engine_start[]; 
+
 #define CHEAT_CODE_END	0xCF000000
 #define CHEAT_ENGINE_RELOCATE	0xCF000001
 #define CHEAT_ENGINE_HOOK	0xCF000002
@@ -47,7 +53,7 @@ static const int MAX_HANDLER_SIZE = 50;
 static u32* hookInterruptHandler (u32* addr, size_t size) {
 	u32* end = addr + size/sizeof(u32);
 	int i;
-	
+
 	// Find the start of the handler
 	while (addr < end) {
 		if ((addr[0] == handlerStartSig[0]) && 
@@ -60,11 +66,11 @@ static u32* hookInterruptHandler (u32* addr, size_t size) {
 		}
 		addr++;
 	}
-	
+
 	if (addr >= end) {
 		return NULL;
 	}
-	
+
 	// Find the end of the handler
 	for (i = 0; i < MAX_HANDLER_SIZE; i++) {
 		if ((addr[i+0] == handlerEndSig[0]) && 
@@ -75,39 +81,38 @@ static u32* hookInterruptHandler (u32* addr, size_t size) {
 			break;
 		}
 	}
-	
+
 	if (i >= MAX_HANDLER_SIZE) {
 		return NULL;
 	}
-	
+
 	// Now find the IRQ vector table
 	// Make addr point to the vector table address pointer within the IRQ handler
 	addr = addr + i + sizeof(handlerEndSig)/sizeof(handlerEndSig[0]);
-	
+
 	// Use relative and absolute addresses to find the location of the table in RAM
 	u32 tableAddr = addr[0];
 	u32 returnAddr = addr[1];
 	u32* actualReturnAddr = addr + 2;
 	u32* actualTableAddr = actualReturnAddr + (tableAddr - returnAddr)/sizeof(u32);
-	
+
 	// The first entry in the table is for the Vblank handler, which is what we want
 	return actualTableAddr;
+	// 2     LCD V-Counter Match
 }
 
-u32 arm7_hookGame (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cheatEngineLocation) {
+
+int hookNdsRetail (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cardEngineLocation) {
+	// if (cheatData[0] == CHEAT_CODE_END) {
+		// return ERR_NOCHEAT;
+	// }
 	u32 oldReturn;
 	u32 cheatWord1, cheatWord2;
-	u32* cheatDest;
 	u32* hookLocation = NULL;
-
-	if (cheatData[0] == CHEAT_CODE_END) {
-		return ERR_NOCHEAT;
-	}
-
 	if (cheatData[0] == CHEAT_ENGINE_RELOCATE) {
 		cheatWord1 = *cheatData++;
 		cheatWord2 = *cheatData++;
-		cheatEngineLocation = (u32*)cheatWord2;
+		cardEngineLocation = (u32*)cheatWord2;
 	}
 	
 	if (cheatData[0] == CHEAT_ENGINE_HOOK) {
@@ -115,34 +120,105 @@ u32 arm7_hookGame (const tNDSHeader* ndsHeader, const u32* cheatData, u32* cheat
 		cheatWord2 = *cheatData++;
 		hookLocation = (u32*)cheatWord2;
 	}
+	if (!hookLocation) {
+		hookLocation = hookInterruptHandler((u32*)ndsHeader->arm7destination, ndsHeader->arm7binarySize);
+	}
+	nocashMessage("hooking\n");
+
+	// SDK 5
+	if (!hookLocation && ndsHeader->unitCode != 0) {
+		switch (ndsHeader->arm7binarySize) {
+			case 0x0001D5A8:
+				hookLocation = (u32*)0x239D280;		// DS WiFi Settings
+				break;
+
+			case 0x00022B40:
+				hookLocation = (u32*)0x238DED8;
+				break;
+
+			case 0x00022BCC:
+				hookLocation = (u32*)0x238DF60;
+				break;
+
+			case 0x00025664:
+				hookLocation = (u32*)0x23A5330;		// DSi-Exclusive cart games
+				break;
+
+			case 0x000257DC:
+				hookLocation = (u32*)0x23A54B8;		// DSi-Exclusive cart games
+				break;
+
+			case 0x00025860:
+				hookLocation = (u32*)0x23A5538;		// DSi-Exclusive cart games
+				break;
+
+			case 0x00026DF4:
+				hookLocation = (u32*)0x23A6AD4;		// DSi-Exclusive cart games
+				break;
+
+			case 0x00028F84:
+				hookLocation = (u32*)0x2391918;
+				break;
+
+			case 0x0002909C:
+				hookLocation = (u32*)0x2391A30;
+				break;
+
+			case 0x0002914C:
+			case 0x00029164:
+				hookLocation = (u32*)0x2391ADC;
+				break;
+
+			case 0x00029EE8:
+				hookLocation = (u32*)0x2391F70;
+				break;
+
+			case 0x0002A2EC:
+				hookLocation = (u32*)0x23921BC;
+				break;
+
+			case 0x0002A318:
+				hookLocation = (u32*)0x23921D8;
+				break;
+
+			case 0x0002AF18:
+				hookLocation = (u32*)0x239227C;
+				break;
+
+			case 0x0002B184:
+				hookLocation = (u32*)0x23924CC;
+				break;
+
+			case 0x0002B24C:
+				hookLocation = (u32*)0x2392578;
+				break;
+
+			case 0x0002C5B4:
+				hookLocation = (u32*)0x2392E74;
+				break;
+		}
+	}
 
 	if (!hookLocation) {
-		hookLocation = hookInterruptHandler ((u32*)ndsHeader->arm7destination, ndsHeader->arm7binarySize);
-	}
-	
-	if (!hookLocation) {
+		nocashMessage("hooking failed\n");
 		return ERR_HOOK;
 	}
-	
+
 	oldReturn = *hookLocation;
+	*hookLocation = (u32)cardEngineLocation;
+
+	copyLoop ((u32*)cardEngineLocation, (u32*)cheat_engine_start, cheat_engine_size);
 	
-	*hookLocation = (u32)cheatEngineLocation;
+	cardEngineLocation[intr_orig_return_offset/sizeof(u32)] = oldReturn;
 	
-	copyLoop (cheatEngineLocation, (u32*)cheat_engine_start, cheat_engine_size);
-	
-	cheatEngineLocation [intr_orig_return_offset/sizeof(u32)] = oldReturn;
-	
-	cheatDest = cheatEngineLocation + (cheat_engine_size/sizeof(u32));
-	
-	// Copy cheat data across
+	u32* cheatDest = cardEngineLocation + (cheat_engine_size/sizeof(u32));
 	do {
 		cheatWord1 = *cheatData++;
 		cheatWord2 = *cheatData++;
 		*cheatDest++ = cheatWord1;
 		*cheatDest++ = cheatWord2;
 	} while (cheatWord1 != CHEAT_CODE_END);
-	
+
+	nocashMessage("ERR_NONE\n");
 	return ERR_NONE;
 }
-
-

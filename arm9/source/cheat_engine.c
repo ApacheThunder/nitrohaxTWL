@@ -26,41 +26,36 @@
 #include "bgsubbootloader.h"
 #include "bgsubbootloadertwl.h"
 
-#define LCDC_BANK_D (vu16*)0x06860000
-
-#define CHEAT_DATA_LOCATION ((u32*)0x06870000)
-#define CHEAT_CODE_END	0xCF000000
-
+#define LCDC_BANK_D 			(vu16*)0x06860000
+#define CHEAT_DATA_LOCATION 	((u32*)0x06870000)
+#define CHEAT_CODE_END			0xCF000000
 #define BOOTLOADER_ARM7LOCATION 0x06020000
 
-static void vramset (volatile void* dst, u16 val, int len)
-{
+static void vramset (volatile void* dst, u16 val, int len) {
 	vu32* dst32 = (vu32*)dst;
 	u32 val32 = val | (val << 16);
-
-	for ( ; len > 0; len -= 4) {
-		*dst32++ = val32;
-	}
+	for ( ; len > 0; len -= 4)*dst32++ = val32;
 }
 
-static void vramcpy (volatile void* dst, const void* src, int len)
-{
+static void vramcpy (volatile void* dst, const void* src, int len) {
 	vu32* dst32 = (vu32*)dst;
 	const u32* src32 = (u32*)src;
-
-	for ( ; len > 0; len -= 4) {
-		*dst32++ = *src32++;
-	}
+	for ( ; len > 0; len -= 4)*dst32++ = *src32++;
 }
 
-void runCheatEngine (void* cheats, int cheatLength) {
+void runCheatEngine (void* cheats, int cheatLength, bool isTWLCart) {
 	// Set NTR values for REG_SCFG_EXT/MBK if on DSi
 	if (isDSiMode() && (REG_SCFG_EXT & BIT(31))) {
 		REG_MBK6 = 0x00003000;
 		REG_MBK7 = 0x00003000;
 		REG_MBK8 = 0x00003000;
-		REG_SCFG_CLK = 0x80;
-		REG_SCFG_EXT = 0x03000000;
+		// REG_SCFG_EXT = 0x03000000;
+		REG_SCFG_EXT = 0x83004000;
+		if (!isTWLCart) {
+			REG_SCFG_CLK = 0x80;
+			REG_SCFG_EXT &= ~(1UL << 14);
+		}
+		REG_SCFG_EXT &= ~(1UL << 31);
 		for (int i = 0; i < 30; i++)swiWaitForVBlank();
 	}
 	
@@ -98,9 +93,9 @@ void runCheatEngine (void* cheats, int cheatLength) {
 	
 	// Reset into a passme loop
 	REG_EXMEMCNT = 0xFFFF;
-	*((vu32*)0x027FFFFC) = 0;
-	*((vu32*)0x027FFE04) = (u32)0xE59FF018;
-	*((vu32*)0x027FFE24) = (u32)0x027FFE04;
+	*((vu32*)0x02FFFFFC) = 0;
+	*((vu32*)0x02FFFE04) = (u32)0xE59FF018;
+	*((vu32*)0x02FFFE24) = (u32)0x02FFFE04;
 	resetARM7(BOOTLOADER_ARM7LOCATION);
 	swiSoftReset();
 }
