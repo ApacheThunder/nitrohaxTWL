@@ -30,10 +30,11 @@ int main(void) {
 
 	irqInit();
 	fifoInit();
-
 	// read User Settings from firmware
 	readUserSettings();
 
+	touchInit();
+	
 	// Start the RTC tracking IRQ
 	initClockIRQ();
 
