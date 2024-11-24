@@ -17,6 +17,7 @@
 */
 
 #include <nds.h>
+#include <nds/arm9/dldi.h>
 #include <stdio.h>
 #include <fat.h>
 #include <string.h>
@@ -97,11 +98,13 @@ int main(int argc, const char* argv[]) {
 	while(1);
 #endif
 
-	// ensure(!isDSiMode() || (REG_SCFG_EXT & BIT(31)), "Nitrohax (for DSi) doesn't have the required permissions to run.");
-	ensure(isDSiMode(), "This version of NitroHax requires DSi/3DS!");
-	ensure((REG_SCFG_EXT & BIT(31)), "Nitrohax doesn't have the required SCFG permissions to run.");
+	ensure(!isDSiMode() || (REG_SCFG_EXT & BIT(31)), "Nitrohax (for DSi) doesn't have the required permissions to run.");
+	// ensure(isDSiMode(), "This version of NitroHax requires DSi/3DS!");
+	// ensure((REG_SCFG_EXT & BIT(31)), "Nitrohax doesn't have the required SCFG permissions to run.");
 		
 	ensure (fatInitDefault(), "FAT init failed");
+	
+	if (!isDSiMode())ensure((io_dldi_data->ioInterface.features & FEATURE_SLOT_GBA), "Must boot from SLOT2 if on DS/DS Lite!");
 
 	ui.showMessage (UserInterface::TEXT_TITLE, TITLE_STRING);
 		
@@ -124,13 +127,13 @@ int main(int argc, const char* argv[]) {
 	
 	sysSetCardOwner (BUS_OWNER_ARM9);
 	
-	 // Check if on DSi with unlocked SCFG, if not, then assume standard NTR precedure.
-	// if (isDSiMode()) {
-	ui.showMessage ("Checking if a cart is inserted...");
-	if (REG_SCFG_MC != 0x18)ui.showMessage ("Insert Game...");
-	while (REG_SCFG_MC != 0x18)DoCartCheck();
-	cardInit(ndsHeaderExt);
-	/* } else {
+	// Check if on DSi with unlocked SCFG, if not, then assume standard NTR precedure.
+	if (isDSiMode()) {
+		ui.showMessage ("Checking if a cart is inserted...");
+		if (REG_SCFG_MC != 0x18)ui.showMessage ("Insert Game...");
+		while (REG_SCFG_MC != 0x18)DoCartCheck();
+		cardInit(ndsHeaderExt);
+	} else {
 		ui.showMessage ("Loaded codes\nYou can remove your flash card\nRemove DS Card");
 		do {
 			swiWaitForVBlank();
@@ -142,7 +145,7 @@ int main(int argc, const char* argv[]) {
 			swiWaitForVBlank();
 			getHeader (ndsHeader);
 		} while (ndsHeader[0] == 0xffffffff);
-	}*/
+	}
 
 	// Delay half a second for the DS card to stabilise
 	DoWait();
@@ -153,6 +156,8 @@ int main(int argc, const char* argv[]) {
 	cardReadHeader((u8*)ndsHeader);
 	
 	ensure(!ROMisDSiExclusive((const tNDSHeader*)ndsHeader), "TWL exclusive games are not supported!");
+	
+	if (!isDSiMode())ensure(!ROMisDSiEnhanced((const tNDSHeader*)ndsHeader), "TWL Enhanced games not supported on DS/DS Lite!");
 	
 	gameid = ndsHeader[3];
 	headerCRC = crc32((const char*)ndsHeader, sizeof(ndsHeader));

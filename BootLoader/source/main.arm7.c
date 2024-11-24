@@ -343,6 +343,10 @@ void arm7_main (void) {
 		REG_MBK8=0x09C03980;
 	}
 	
+	u8 scfgUnlocked = 0x00;
+	
+	if ((REG_SCFG_EXT & BIT(31)))scfgUnlocked = 0xFF;
+	
 	u32 errorCode;
 	int I;
 
@@ -360,7 +364,7 @@ void arm7_main (void) {
 	// Get ARM7 to clear RAM
 	arm7_resetMemory();
 	
-	if ((REG_SNDEXTCNT != 0) && (REG_SCFG_EXT & BIT(31)))REG_SCFG_ROM = 0x703;
+	if ((REG_SNDEXTCNT != 0) && (scfgUnlocked > 0))REG_SCFG_ROM = 0x703;
 
 	errorOutput(ERR_STS_LOAD_BIN, false);
 	
@@ -370,7 +374,7 @@ void arm7_main (void) {
 	errorCode = arm7_loadBinary();
 	if (errorCode)errorOutput(errorCode, true);
 	
-	if (REG_SNDEXTCNT != 0 && (REG_SCFG_EXT & BIT(31))) {
+	if (REG_SNDEXTCNT != 0 && (scfgUnlocked > 0)) {
 		*(u16*)0x4000500 = 0x807F;
 		REG_GPIO_WIFI |= BIT(8);	// Old NDS-Wifi mode
 		REG_SCFG_EXT = 0x92A40000;
@@ -389,7 +393,7 @@ void arm7_main (void) {
 
 	// Load the cheat engine and hook it into the ARM7 binary
 	// errorCode = arm7_hookGame(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION);
-	if (ndsHeader->unitCode > 0) {
+	if ((ndsHeader->unitCode > 0) && (scfgUnlocked > 0)) {
 		errorCode = hookNdsRetail(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION_TWL);
 	} else {
 		errorCode = hookNdsRetail(ndsHeader, (const u32*)CHEAT_DATA_LOCATION, (u32*)CHEAT_ENGINE_LOCATION);
@@ -401,7 +405,7 @@ void arm7_main (void) {
 	}
 
 	setMemoryAddress(ndsHeader);
-	if (ndsHeader->unitCode > 0)setMemoryAddressTWL(ndsHeader);
+	if ((ndsHeader->unitCode > 0) && (scfgUnlocked > 0))setMemoryAddressTWL(ndsHeader);
 
 	ipcSendState(ARM7_BOOTBIN);
 
